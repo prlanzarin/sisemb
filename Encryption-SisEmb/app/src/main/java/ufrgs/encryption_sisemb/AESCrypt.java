@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -95,6 +96,7 @@ public final class AESCrypt {
      */
     public static byte[] encrypt(final SecretKeySpec key, final byte[] iv, final byte[] message)
             throws GeneralSecurityException {
+        Security.addProvider(new org.spongycastle.jce.provider.BouncyCastleProvider());
         final Cipher cipher = Cipher.getInstance(AES_MODE);
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
         cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec);

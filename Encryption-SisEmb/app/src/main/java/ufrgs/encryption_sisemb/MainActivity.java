@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         // Raw string of X*MB. Change multiplier to manipulate input size.
-        char[] raw = new char[10*MB];
+        char[] raw = new char[11*MB];
         Arrays.fill(raw, 'x');
 
         String password = "password";
@@ -36,10 +36,10 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        // Serpent Decryption
+        // Twofish Encryption
         try {
-            String encryptedMsg = SerpentCrypt.encrypt(password, message);
-            Log.d("ENCRYPTED-SERPENT: ", encryptedMsg);
+            String encryptedMsg = TwofishCrypt.encrypt(password, message);
+            Log.d("ENCRYPTED-TWOFISH: ", encryptedMsg);
         }catch (GeneralSecurityException e){
             e.printStackTrace();
         }

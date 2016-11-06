@@ -13,8 +13,8 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-public class SerpentCrypt {
-    private static final String TAG = "SerpentCrypt";
+public class TwofishCrypt {
+    private static final String TAG = "TwofishCrypt";
     //AESCrypt-ObjC uses SHA-256 (and so a 256-bit key)
     private static final String HASH_ALGORITHM = "SHA-256";
     //togglable log option (please turn off in live!)
@@ -22,7 +22,7 @@ public class SerpentCrypt {
 
     private static final String CHARSET = "UTF-8";
 
-    public static final String TRANSFORMATION = "Serpent/CBC/PKCS7Padding";
+    public static final String TRANSFORMATION = "Twofish/CBC/PKCS7Padding";
 
     private static final byte[] ivBytes = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
@@ -41,7 +41,7 @@ public class SerpentCrypt {
 
         log("SHA-256 key ", key);
 
-        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "Serpent");
+        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "Twofish");
         return secretKeySpec;
     }
 
