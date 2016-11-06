@@ -1,10 +1,8 @@
 package ufrgs.encryption_sisemb;
 
-import android.os.Environment;
 import android.util.Base64;
 import android.util.Log;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -12,7 +10,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 
 import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -60,6 +57,8 @@ public class SerpentCrypt {
      */
     public static String encrypt(final String password, String message)
             throws GeneralSecurityException {
+
+        Security.addProvider(new org.spongycastle.jce.provider.BouncyCastleProvider());
 
         try {
             final SecretKeySpec key = generateKey(password);
