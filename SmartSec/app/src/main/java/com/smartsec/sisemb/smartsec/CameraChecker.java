@@ -7,22 +7,31 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.telephony.SmsManager;
 import android.util.Log;
+import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import static android.content.ContentValues.TAG;
 
 public class CameraChecker extends AppCompatActivity {
 
-    private static final int MY_PERMISSIONS_REQUEST_CAMERA =0 ;
+    private static final int MY_PERMISSIONS_REQUEST_CAMERA = 0;
+    private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 1;
     private Camera mCamera;
     private CameraPreview mPreview;
     int i;
+    EditText txtphoneNo;
+    String phoneNo;
+    String message = "SmartSec: different beahaviour detected at the camera.";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera_checker);
+
+        txtphoneNo = (EditText) findViewById(R.id.editText);
 
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.CAMERA)
@@ -50,25 +59,60 @@ public class CameraChecker extends AppCompatActivity {
         preview.addView(mPreview);
     }
 
-    public static Camera getCameraInstance()
-    {
+    protected void sendSMSMessage() {
+        phoneNo = txtphoneNo.getText().toString();
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.SEND_SMS)) {
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.SEND_SMS},
+                        MY_PERMISSIONS_REQUEST_SEND_SMS);
+            }
+        }
+    }
+
+    public static Camera getCameraInstance() {
         Camera c = null;
-        try
-        {
-            c = Camera.open();}
-        catch (Exception e)
-        { System.out.println("blamjjjh");}
+        try {
+            c = Camera.open();
+        }
+        catch (Exception e) {
+            System.out.println("blamjjjh");
+        }
         return c;
     }
-    public void releasec(){
+
+    public void releasec() {
         mCamera.release();
     }
 
     @Override
-    protected void onStop()
-    {
+    protected void onStop() {
 
         super.onStop();
         releasec();
+    }
+
+    @Override
+    public void onRequestPermissionsResult (int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_SEND_SMS: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    SmsManager smsManager = SmsManager.getDefault();
+                    smsManager.sendTextMessage(phoneNo, null, message, null, null);
+                    Toast.makeText(getApplicationContext(), "SMS sent.",
+                            Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(getApplicationContext(),
+                            "SMS faild, please try again.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+        }
     }
 }
