@@ -13,7 +13,14 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import java.sql.Time;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import static android.content.ContentValues.TAG;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class CameraChecker extends AppCompatActivity {
 
@@ -21,10 +28,14 @@ public class CameraChecker extends AppCompatActivity {
     private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 1;
     private Camera mCamera;
     private CameraPreview mPreview;
-    int i;
+    private boolean CURRENT_PICTURE = false;
+    private byte[] img1 = null, img2 = null;
     EditText txtphoneNo;
     String phoneNo;
     String message = "SmartSec: different beahaviour detected at the camera.";
+
+    ScheduledExecutorService scheduler =
+            Executors.newSingleThreadScheduledExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +68,22 @@ public class CameraChecker extends AppCompatActivity {
         mPreview = new CameraPreview(this, mCamera);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mPreview);
+
+        scheduler.scheduleAtFixedRate
+                (new Runnable() {
+                    public void run() {
+                        mPreview.takeSnapPhoto();
+                        Log.d(TAG, "TAKING SNAP PHOTO");
+                        if(!CURRENT_PICTURE) {
+                            img1 = mPreview.getImgByteArray();
+                            CURRENT_PICTURE = true;
+                        }
+                        else {
+                            img2 = mPreview.getImgByteArray();
+                            CURRENT_PICTURE = false;
+                        }
+                    }
+                }, 0, 1, TimeUnit.SECONDS);
     }
 
     protected void sendSMSMessage() {
@@ -115,4 +142,5 @@ public class CameraChecker extends AppCompatActivity {
             }
         }
     }
+
 }
