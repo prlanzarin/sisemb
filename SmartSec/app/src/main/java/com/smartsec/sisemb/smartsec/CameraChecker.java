@@ -2,6 +2,8 @@ package com.smartsec.sisemb.smartsec;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -14,6 +16,7 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import java.sql.Time;
+import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -82,8 +85,61 @@ public class CameraChecker extends AppCompatActivity {
                             img2 = mPreview.getImgByteArray();
                             CURRENT_PICTURE = false;
                         }
+
+                        if(img1 != null & img2 != null) {
+                            // Comparison using a simple Array.equals (to compare byte arrays) without resize always
+                            // shows difference. Will test with resizing to 8x8 to see what's up
+                            if(!Arrays.equals(img1, img2)) {
+                                Log.d(TAG, "DIFFERENT IMAGES!");
+                            }
+                            /* // Comparison option using the link I found on stackoverflow, still does not work
+                            Bitmap bmp1 = BitmapFactory.decodeByteArray(img1 , 0, img1.length);
+                            Bitmap bmp2 = BitmapFactory.decodeByteArray(img2 , 0, img2.length);
+                            if(SameAs(bmp1, bmp2)) {
+                                Log.d(TAG, "DIFFERENT IMAGES!");
+                            }
+                            */
+                        }
                     }
                 }, 0, 1, TimeUnit.SECONDS);
+    }
+
+    /* BMP comparison method I found on stackoverflow, not sure if it works properly */
+    boolean SameAs(Bitmap A, Bitmap B) {
+
+        // Different types of image
+        if(A.getConfig() != B.getConfig())
+            return false;
+
+        // Different sizes
+        if (A.getWidth() != B.getWidth())
+            return false;
+        if (A.getHeight() != B.getHeight())
+            return false;
+
+        // Allocate arrays - OK because at worst we have 3 bytes + Alpha (?)
+        int w = A.getWidth();
+        int h = A.getHeight();
+
+        int[] argbA = new int[w*h];
+        int[] argbB = new int[w*h];
+
+        A.getPixels(argbA, 0, w, 0, 0, w, h);
+        B.getPixels(argbB, 0, w, 0, 0, w, h);
+
+        // Alpha channel special check
+        if (A.getConfig() == Bitmap.Config.ALPHA_8) {
+            // in this case we have to manually compare the alpha channel as the rest is garbage.
+            final int length = w * h;
+            for (int i = 0 ; i < length ; i++) {
+                if ((argbA[i] & 0xFF000000) != (argbB[i] & 0xFF000000)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        return Arrays.equals(argbA, argbB);
     }
 
     protected void sendSMSMessage() {
