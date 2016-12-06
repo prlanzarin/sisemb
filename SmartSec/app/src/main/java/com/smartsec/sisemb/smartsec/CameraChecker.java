@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import java.sql.Time;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -42,6 +43,7 @@ public class CameraChecker extends AppCompatActivity {
     ScheduledExecutorService scheduler =
             Executors.newSingleThreadScheduledExecutor();
     private boolean match;
+    Calendar lastSent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,6 +96,10 @@ public class CameraChecker extends AppCompatActivity {
                         if(sbmp1 != null && sbmp2 != null) {
                             compare();
                             if(!match) {
+                                if(canSendSMS()) {
+                                    sendSMSMessage();
+                                    Log.d(TAG, "SMS");
+                                }
                                 Log.d(TAG, "DIFFERENT IMAGES!");
                             }
 
@@ -102,19 +108,35 @@ public class CameraChecker extends AppCompatActivity {
                 }, 0, 1, TimeUnit.SECONDS);
     }
 
+    protected boolean canSendSMS() {
+        Calendar c = Calendar.getInstance();
+
+        if(lastSent != null) {
+            if (c.getTimeInMillis() - lastSent.getTimeInMillis() > 30000) {
+                lastSent = c;
+                return true;
+            } else {
+                return false;
+            }
+        }
+        else {
+            lastSent = c;
+            return true;
+        }
+    }
+
     protected void sendSMSMessage() {
         phoneNo = txtphoneNo.getText().toString();
 
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.SEND_SMS)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.SEND_SMS)) {
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.SEND_SMS},
-                        MY_PERMISSIONS_REQUEST_SEND_SMS);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.SEND_SMS)) {
             }
+            else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, MY_PERMISSIONS_REQUEST_SEND_SMS);
+            }
+        }
+        else if (!phoneNo.isEmpty()){
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, MY_PERMISSIONS_REQUEST_SEND_SMS);
         }
     }
 
