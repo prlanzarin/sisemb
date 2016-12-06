@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.hardware.Camera;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -33,12 +34,14 @@ public class CameraChecker extends AppCompatActivity {
     private CameraPreview mPreview;
     private boolean CURRENT_PICTURE = false;
     private byte[] img1 = null, img2 = null;
+    private Bitmap sbmp1 = null, sbmp2 = null;
     EditText txtphoneNo;
     String phoneNo;
     String message = "SmartSec: different beahaviour detected at the camera.";
 
     ScheduledExecutorService scheduler =
             Executors.newSingleThreadScheduledExecutor();
+    private boolean match;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,27 +81,32 @@ public class CameraChecker extends AppCompatActivity {
                         mPreview.takeSnapPhoto();
                         Log.d(TAG, "TAKING SNAP PHOTO");
                         if(!CURRENT_PICTURE) {
+                            Log.d(TAG, "setting pic 1");
                             img1 = mPreview.getImgByteArray();
+                            sbmp1 = mPreview.getScaledBmp();
                             CURRENT_PICTURE = true;
                         }
                         else {
+                            Log.d(TAG, "setting pic 2");
                             img2 = mPreview.getImgByteArray();
+                            sbmp2 = mPreview.getScaledBmp();
                             CURRENT_PICTURE = false;
                         }
 
-                        if(img1 != null & img2 != null) {
+                        if(img1 != null & img2 != null && sbmp1 != null && sbmp2 != null) {
                             // Comparison using a simple Array.equals (to compare byte arrays) without resize always
                             // shows difference. Will test with resizing to 8x8 to see what's up
-                            if(!Arrays.equals(img1, img2)) {
+                            //if(!Arrays.equals(img1, img2)) {
+                            //    Log.d(TAG, "DIFFERENT IMAGES!");
+                            //}
+                            // Comparison option using the link I found on stackoverflow, still does not work
+                            //Bitmap bmp1 = BitmapFactory.decodeByteArray(img1 , 0, img1.length);
+                            //Bitmap bmp2 = BitmapFactory.decodeByteArray(img2 , 0, img2.length);
+                            compare();
+                            if(!match) {
                                 Log.d(TAG, "DIFFERENT IMAGES!");
                             }
-                            /* // Comparison option using the link I found on stackoverflow, still does not work
-                            Bitmap bmp1 = BitmapFactory.decodeByteArray(img1 , 0, img1.length);
-                            Bitmap bmp2 = BitmapFactory.decodeByteArray(img2 , 0, img2.length);
-                            if(SameAs(bmp1, bmp2)) {
-                                Log.d(TAG, "DIFFERENT IMAGES!");
-                            }
-                            */
+
                         }
                     }
                 }, 0, 1, TimeUnit.SECONDS);
@@ -106,16 +114,6 @@ public class CameraChecker extends AppCompatActivity {
 
     /* BMP comparison method I found on stackoverflow, not sure if it works properly */
     boolean SameAs(Bitmap A, Bitmap B) {
-
-        // Different types of image
-        if(A.getConfig() != B.getConfig())
-            return false;
-
-        // Different sizes
-        if (A.getWidth() != B.getWidth())
-            return false;
-        if (A.getHeight() != B.getHeight())
-            return false;
 
         // Allocate arrays - OK because at worst we have 3 bytes + Alpha (?)
         int w = A.getWidth();
@@ -197,6 +195,49 @@ public class CameraChecker extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    // compare the two images in this object.
+    public void compare() {
+        // convert to gray images.
+        // how big are each section
+        int blocksx = (int)(sbmp1.getWidth() / 8);
+        int blocksy = (int)(sbmp2.getHeight() / 8);
+        // set to a match by default, if a change is found then flag non-match
+        this.match = true;
+        // loop through whole image and compare individual blocks of images
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 8; x++) {
+                Bitmap temp1 = sbmp1;
+                Bitmap temp2 = sbmp2;
+                Bitmap croppedBitmap1 = Bitmap.createBitmap(temp1, x*blocksx, y*blocksy, blocksx - 1, blocksy - 1);
+                Bitmap croppedBitmap2 = Bitmap.createBitmap(temp2, x*blocksx, y*blocksy, blocksx - 1, blocksy - 1);
+                int b1 = getAverageBrightness(croppedBitmap1, 1);
+                int b2 = getAverageBrightness(croppedBitmap2, 1);
+                int diff = Math.abs(b1 - b2);
+                if (diff > 10) { // the difference in a certain region has passed the threshold value of factorA
+                    // draw an indicator on the change image to show where change was detected.
+                    this.match = false;
+                }
+            }
+        }
+    }
+
+    public int getAverageBrightness(android.graphics.Bitmap bitmap, int pixelSpacing) {
+        int R = 0; int G = 0; int B = 0;
+        int height = bitmap.getHeight();
+        int width = bitmap.getWidth();
+        int n = 0;
+        int[] pixels = new int[width * height];
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+        for (int i = 0; i < pixels.length; i += pixelSpacing) {
+            int color = pixels[i];
+            R += Color.red(color);
+            G += Color.green(color);
+            B += Color.blue(color);
+            n++;
+        }
+        return (R + B + G) / (n * 3);
     }
 
 }

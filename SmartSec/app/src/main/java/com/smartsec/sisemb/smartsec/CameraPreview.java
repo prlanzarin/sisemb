@@ -27,6 +27,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private SurfaceHolder mHolder;
     private Camera mCamera;
     public byte[] imgByteArray = null;
+    public Bitmap scaledBmp = null;
 
     public CameraPreview(Context context, Camera camera) {
         super(context);
@@ -97,9 +98,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                     YuvImage yuv_image = new YuvImage(data, format, w, h, null);
                     // Convert YuV to Jpeg
                     Rect rect = new Rect(0, 0, w, h);
-                    ByteArrayOutputStream output_stream = new ByteArrayOutputStream();
-                    yuv_image.compressToJpeg(rect, 100, output_stream);
-                    imgByteArray = output_stream.toByteArray();
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    yuv_image.compressToJpeg(rect, 100, outputStream);
+                    imgByteArray = outputStream.toByteArray();
+                    Bitmap resizedBmp = BitmapFactory.decodeByteArray(imgByteArray, 0, imgByteArray.length);
+                    //scaledBmp = Bitmap.createScaledBitmap(resizedBmp, 8, 8, true);
+                    scaledBmp = resizedBmp;
+                    Log.d(TAG, "TEST   =>>> " + scaledBmp.getHeight() + " " + scaledBmp.getWidth());
                 }
             }
         });
@@ -107,6 +112,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     public byte[] getImgByteArray() {
         return imgByteArray;
+    }
+
+    public Bitmap getScaledBmp() {
+        return scaledBmp;
     }
 
 
