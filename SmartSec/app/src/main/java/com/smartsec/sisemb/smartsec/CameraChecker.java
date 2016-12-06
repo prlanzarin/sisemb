@@ -127,6 +127,37 @@ public class CameraChecker extends AppCompatActivity {
         A.getPixels(argbA, 0, w, 0, 0, w, h);
         B.getPixels(argbB, 0, w, 0, 0, w, h);
 
+        int[] histogramA = new int[255];
+        int[] histogramB = new int[255];
+        int[] diffHistogram = new int[255];
+
+        for(int i = 0; i < argbA.length; i++) {
+            int red = (argA[i] & 0xFF000000) >> 6;
+            int green = (argA[i] & 0x00FF0000) >> 4;
+            int blue = (argA[i] & 0x0000FF00) >> 2;
+            int gscale = (red + green + blue) / 3;
+            histogramA[gscale] ++;
+        }
+
+        for(int i = 0; i < argbB.length; i++) {
+            int red = (argB[i] & 0xFF000000) >> 6;
+            int green = (argB[i] & 0x00FF0000) >> 4;
+            int blue = (argB[i] & 0x0000FF00) >> 2;
+            int gscale = (red + green + blue) / 3;
+            histogramB[gscale] ++;
+        }
+
+        int avg = 0;
+        for(int i = 0; i < 255; i++)
+            avg += abs(histogramA[i] - histogramB[i]);
+        avg = avg / 255;
+
+        if(avg > 25)
+            return true;
+        else
+            return false;
+
+        /*
         // Alpha channel special check
         if (A.getConfig() == Bitmap.Config.ALPHA_8) {
             // in this case we have to manually compare the alpha channel as the rest is garbage.
@@ -140,6 +171,7 @@ public class CameraChecker extends AppCompatActivity {
         }
 
         return Arrays.equals(argbA, argbB);
+        */
     }
 
     protected void sendSMSMessage() {
