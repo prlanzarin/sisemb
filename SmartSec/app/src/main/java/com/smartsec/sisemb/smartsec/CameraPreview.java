@@ -1,17 +1,22 @@
 package com.smartsec.sisemb.smartsec;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.os.Environment;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import static android.content.ContentValues.TAG;
@@ -108,7 +113,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public byte[] getImgByteArray() {
         return imgByteArray;
     }
-
 
     /* Resize function for bmps */
     byte[] resizeImage(byte[] input, int height, int width) {

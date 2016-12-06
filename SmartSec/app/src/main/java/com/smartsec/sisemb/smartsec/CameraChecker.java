@@ -89,16 +89,16 @@ public class CameraChecker extends AppCompatActivity {
                         if(img1 != null & img2 != null) {
                             // Comparison using a simple Array.equals (to compare byte arrays) without resize always
                             // shows difference. Will test with resizing to 8x8 to see what's up
-                            if(!Arrays.equals(img1, img2)) {
+                            /*if(!Arrays.equals(img1, img2)) {
                                 Log.d(TAG, "DIFFERENT IMAGES!");
-                            }
-                            /* // Comparison option using the link I found on stackoverflow, still does not work
+                            }*/
+                             // Comparison option using the link I found on stackoverflow, still does not work
                             Bitmap bmp1 = BitmapFactory.decodeByteArray(img1 , 0, img1.length);
                             Bitmap bmp2 = BitmapFactory.decodeByteArray(img2 , 0, img2.length);
+                            Log.d(TAG, "oi");
                             if(SameAs(bmp1, bmp2)) {
-                                Log.d(TAG, "DIFFERENT IMAGES!");
+                                Log.d(TAG, "SAME IMAGES!");
                             }
-                            */
                         }
                     }
                 }, 0, 1, TimeUnit.SECONDS);
@@ -132,27 +132,29 @@ public class CameraChecker extends AppCompatActivity {
         int[] diffHistogram = new int[255];
 
         for(int i = 0; i < argbA.length; i++) {
-            int red = (argA[i] & 0xFF000000) >> 6;
-            int green = (argA[i] & 0x00FF0000) >> 4;
-            int blue = (argA[i] & 0x0000FF00) >> 2;
+            int red = (argbA[i] & 0xFF000000) >> 6;
+            int green = (argbA[i] & 0x00FF0000) >> 4;
+            int blue = (argbA[i] & 0x0000FF00) >> 2;
             int gscale = (red + green + blue) / 3;
             histogramA[gscale] ++;
         }
 
         for(int i = 0; i < argbB.length; i++) {
-            int red = (argB[i] & 0xFF000000) >> 6;
-            int green = (argB[i] & 0x00FF0000) >> 4;
-            int blue = (argB[i] & 0x0000FF00) >> 2;
+            int red = (argbB[i] & 0xFF000000) >> 6;
+            int green = (argbB[i] & 0x00FF0000) >> 4;
+            int blue = (argbB[i] & 0x0000FF00) >> 2;
             int gscale = (red + green + blue) / 3;
             histogramB[gscale] ++;
         }
 
         int avg = 0;
         for(int i = 0; i < 255; i++)
-            avg += abs(histogramA[i] - histogramB[i]);
+            avg += Math.abs(histogramA[i] - histogramB[i]);
         avg = avg / 255;
 
-        if(avg > 25)
+        Log.d(TAG, Integer.toString(avg));
+
+        if(avg > 5)
             return true;
         else
             return false;
