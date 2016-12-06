@@ -26,7 +26,6 @@ import static android.content.ContentValues.TAG;
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
     private SurfaceHolder mHolder;
     private Camera mCamera;
-    public byte[] imgByteArray = null;
     public Bitmap scaledBmp = null;
 
     public CameraPreview(Context context, Camera camera) {
@@ -88,6 +87,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mCamera.setOneShotPreviewCallback(new Camera.PreviewCallback() {
             @Override
             public void onPreviewFrame(byte[] data, Camera camera) {
+                byte[] imgByteArray = null;
                 Camera.Parameters parameters = camera.getParameters();
                 int format = parameters.getPreviewFormat();
                 //YUV formats require more conversion
@@ -101,32 +101,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                     yuv_image.compressToJpeg(rect, 100, outputStream);
                     imgByteArray = outputStream.toByteArray();
-                    Bitmap resizedBmp = BitmapFactory.decodeByteArray(imgByteArray, 0, imgByteArray.length);
-                    //scaledBmp = Bitmap.createScaledBitmap(resizedBmp, 8, 8, true);
-                    scaledBmp = resizedBmp;
-                    Log.d(TAG, "TEST   =>>> " + scaledBmp.getHeight() + " " + scaledBmp.getWidth());
+                    scaledBmp = BitmapFactory.decodeByteArray(imgByteArray, 0, imgByteArray.length);
                 }
             }
         });
     }
 
-    public byte[] getImgByteArray() {
-        return imgByteArray;
-    }
-
     public Bitmap getScaledBmp() {
         return scaledBmp;
-    }
-
-
-    /* Resize function for bmps */
-    byte[] resizeImage(byte[] input, int height, int width) {
-        Bitmap original = BitmapFactory.decodeByteArray(input , 0, input.length);
-        Bitmap resized = Bitmap.createScaledBitmap(original, height, width, true);
-
-        ByteArrayOutputStream blob = new ByteArrayOutputStream();
-        resized.compress(Bitmap.CompressFormat.JPEG, 100, blob);
-
-        return blob.toByteArray();
     }
 }
