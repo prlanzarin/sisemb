@@ -16,16 +16,12 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import java.sql.Time;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static android.content.ContentValues.TAG;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class CameraChecker extends AppCompatActivity {
 
@@ -52,6 +48,7 @@ public class CameraChecker extends AppCompatActivity {
 
         txtphoneNo = (EditText) findViewById(R.id.editText);
 
+        /* checks for camera permissions */
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -77,6 +74,8 @@ public class CameraChecker extends AppCompatActivity {
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mPreview);
 
+        // Image comparison scheduler. It takes a picture each X seconds and compare
+        // then using the compare() function which sets the @match variable
         scheduler.scheduleAtFixedRate
                 (new Runnable() {
                     public void run() {
@@ -93,9 +92,11 @@ public class CameraChecker extends AppCompatActivity {
                             CURRENT_PICTURE = false;
                         }
 
+                        // comparison of bitmaps
                         if(sbmp1 != null && sbmp2 != null) {
                             compare();
                             if(!match) {
+                                // sending SMS
                                 if(canSendSMS()) {
                                     sendSMSMessage();
                                     Log.d(TAG, "SMS");
@@ -108,6 +109,7 @@ public class CameraChecker extends AppCompatActivity {
                 }, 0, 1, TimeUnit.SECONDS);
     }
 
+    // checks if it is possible to send SMS within the specified timeframe
     protected boolean canSendSMS() {
         Calendar c = Calendar.getInstance();
 
@@ -125,9 +127,10 @@ public class CameraChecker extends AppCompatActivity {
         }
     }
 
+    // sends a SMS message warning the desired user of movement detection
     protected void sendSMSMessage() {
         phoneNo = txtphoneNo.getText().toString();
-
+        // permission checking
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.SEND_SMS)) {
             }
@@ -140,6 +143,7 @@ public class CameraChecker extends AppCompatActivity {
         }
     }
 
+    // gets a android camera instance
     public static Camera getCameraInstance() {
         Camera c = null;
         try {
@@ -165,6 +169,7 @@ public class CameraChecker extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult (int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
+            // seding SMS message
             case MY_PERMISSIONS_REQUEST_SEND_SMS: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -183,11 +188,11 @@ public class CameraChecker extends AppCompatActivity {
 
     // compare the two images in this object.
     public void compare() {
-        // convert to gray images.
         int blocksx = (int)(sbmp1.getWidth() / 8);
         int blocksy = (int)(sbmp2.getHeight() / 8);
         this.match = true;
-        // loop through whole image and compare individual blocks of images
+        // loop through the image comparing blocks of 8x8 pixels taking into account their average
+        // brightness difference.
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {
                 Bitmap temp1 = sbmp1;
@@ -197,12 +202,14 @@ public class CameraChecker extends AppCompatActivity {
                 int b1 = getAverageBrightness(croppedBitmap1, 1);
                 int b2 = getAverageBrightness(croppedBitmap2, 1);
                 int diff = Math.abs(b1 - b2);
-                if (diff > 10)
+                // brightness thresold comparison
+                if (diff > 23)
                     this.match = false;
             }
         }
     }
 
+    // method to get average brightness from image
     public int getAverageBrightness(android.graphics.Bitmap bitmap, int pixelSpacing) {
         int R = 0; int G = 0; int B = 0;
         int height = bitmap.getHeight();

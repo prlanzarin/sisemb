@@ -17,10 +17,6 @@ import java.io.IOException;
 import static android.content.ContentValues.TAG;
 
 /**
- * Created by Marcelo on 03/12/2016.
- */
-
-/**
  * A basic Camera preview class
  */
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
@@ -31,17 +27,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public CameraPreview(Context context, Camera camera) {
         super(context);
         mCamera = camera;
-
-        // Install a SurfaceHolder.Callback so we get notified when the
-        // underlying surface is created and destroyed.
         mHolder = getHolder();
         mHolder.addCallback(this);
-        // deprecated setting, but required on Android versions prior to 3.0
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
-        // The Surface has been created, now tell the camera where to draw the preview.
+        // creates a surface onto which we shall exhibit the camera preview image
         try {
             mCamera.setPreviewDisplay(holder);
             mCamera.startPreview();
@@ -51,29 +43,19 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
 
     public void surfaceDestroyed(SurfaceHolder holder) {
-        // empty. Take care of releasing the Camera preview in your activity.
     }
 
+    // rotate/etc events
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
-        // If your preview can change or rotate, take care of those events here.
-        // Make sure to stop the preview before resizing or reformatting it.
-
         if (mHolder.getSurface() == null) {
-            // preview surface does not exist
             return;
         }
-
-        // stop preview before making changes
         try {
             mCamera.stopPreview();
         } catch (Exception e) {
-            // ignore: tried to stop a non-existent preview
+            e.printStackTrace();
         }
-
-        // set preview size and make any resize, rotate or
-        // reformatting changes here
-
-        // start preview with new settings
+        // restart preview with changed settings (e.g rotated view)
         try {
             mCamera.setPreviewDisplay(mHolder);
             mCamera.startPreview();
@@ -83,24 +65,34 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
     }
 
+    /* takes a snap photo from the camera preview data. Sets the scaledBmp field
+       from a YUVImage that is generated from the byte array. The byte array (@data)
+       comes from the setOneShotPreviewCallback, which captures changes in the camera
+       preview media flow. The image is compressed to allow conversion to bitmap, which
+       is useful for comparison later.
+      */
     public void takeSnapPhoto() {
         mCamera.setOneShotPreviewCallback(new Camera.PreviewCallback() {
             @Override
             public void onPreviewFrame(byte[] data, Camera camera) {
                 byte[] imgByteArray = null;
+                // we are gathering the camera dimensions and preview image format here
                 Camera.Parameters parameters = camera.getParameters();
-                int format = parameters.getPreviewFormat();
-                //YUV formats require more conversion
-                if (format == ImageFormat.NV21 || format == ImageFormat.YUY2 || format == ImageFormat.NV16) {
-                    int w = parameters.getPreviewSize().width;
-                    int h = parameters.getPreviewSize().height;
-                    // Get the YuV image
-                    YuvImage yuv_image = new YuvImage(data, format, w, h, null);
-                    // Convert YuV to Jpeg
-                    Rect rect = new Rect(0, 0, w, h);
+                int imgFormat = parameters.getPreviewFormat();
+                if (imgFormat == ImageFormat.NV21
+                        || imgFormat == ImageFormat.YUY2
+                        || imgFormat == ImageFormat.NV16) {
+                    int width = parameters.getPreviewSize().width;
+                    int height = parameters.getPreviewSize().height;
+                    // image extraction from preview byte array
+                    YuvImage yuv_image = new YuvImage(data, imgFormat, width, height, null);
+                    // image compression (rect is for squaring part of the image.
+                    // in this case, we want the whole image to be compressed
+                    Rect squaringFactor = new Rect(0, 0, width, height);
                     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                    yuv_image.compressToJpeg(rect, 100, outputStream);
+                    yuv_image.compressToJpeg(squaringFactor, 100, outputStream);
                     imgByteArray = outputStream.toByteArray();
+                    // we convert the byte array to bitmap
                     scaledBmp = BitmapFactory.decodeByteArray(imgByteArray, 0, imgByteArray.length);
                 }
             }
